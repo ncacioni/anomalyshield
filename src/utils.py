@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -125,3 +126,134 @@ def set_random_seeds(seed: int = 42) -> None:
             torch.cuda.manual_seed_all(seed)
     except ImportError:
         pass
+
+
+def generate_report(results: dict, output_path: str | None = None) -> str:
+    """Generate a Markdown report from AnomalyShield results.
+
+    Parameters
+    ----------
+    results : dict
+        Mapping of detector name to result dict as returned by
+        ``AnomalyShield.run_all()``. Each value contains ``predictions``
+        (np.ndarray of -1/1), ``scores`` (np.ndarray), and optionally
+        ``metrics`` (dict).
+    output_path : str | None
+        If provided, the report is written to this file path.
+
+    Returns
+    -------
+    str
+        The full Markdown report.
+    """
+    lines: list[str] = []
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # --- Header ---
+    lines.append("# AnomalyShield Detection Report")
+    lines.append("")
+    lines.append(f"**Generated:** {timestamp}")
+    lines.append("")
+
+    # --- Summary ---
+    n_detectors = len(results)
+    # Determine total data points from the first detector's predictions
+    first_result = next(iter(results.values()))
+    n_points = len(first_result["predictions"])
+
+    lines.append("## Summary")
+    lines.append("")
+    lines.append(f"- **Detectors run:** {n_detectors}")
+    lines.append(f"- **Total data points:** {n_points}")
+    lines.append("")
+
+    anomaly_counts: dict[str, int] = {}
+    for name, result in results.items():
+        preds = np.asarray(result["predictions"])
+        count = int(np.sum(preds == -1))
+        anomaly_counts[name] = count
+        lines.append(f"- **{name}:** {count} anomalies detected")
+
+    lines.append("")
+
+    # --- Metrics Table ---
+    metric_keys = ["accuracy", "precision", "recall", "f1", "auc_roc"]
+    has_metrics = any(
+        "metrics" in r and r["metrics"] is not None for r in results.values()
+    )
+
+    if has_metrics:
+        lines.append("## Metrics Comparison")
+        lines.append("")
+
+        # Build header row
+        header = "| Detector | " + " | ".join(metric_keys) + " |"
+        separator = "| --- | " + " | ".join(["---"] * len(metric_keys)) + " |"
+        lines.append(header)
+        lines.append(separator)
+
+        for name, result in results.items():
+            metrics = result.get("metrics")
+            if metrics is None:
+                continue
+            row_values = []
+            for key in metric_keys:
+                value = metrics.get(key)
+                if value is not None:
+                    row_values.append(f"{value:.4f}")
+                else:
+                    row_values.append("N/A")
+            lines.append(f"| {name} | " + " | ".join(row_values) + " |")
+
+        lines.append("")
+
+    # --- Per-Detector Details ---
+    lines.append("## Per-Detector Details")
+    lines.append("")
+
+    for name, result in results.items():
+        preds = np.asarray(result["predictions"])
+        count = anomaly_counts[name]
+        pct = (count / n_points) * 100 if n_points > 0 else 0.0
+
+        lines.append(f"### {name}")
+        lines.append("")
+        lines.append(f"- **Anomalies detected:** {count}")
+        lines.append(f"- **Percentage flagged:** {pct:.2f}%")
+
+        metrics = result.get("metrics")
+        if metrics is not None:
+            for key in metric_keys:
+                value = metrics.get(key)
+                if value is not None:
+                    lines.append(f"- **{key}:** {value:.4f}")
+
+        lines.append("")
+
+    # --- Ensemble Summary ---
+    lines.append("## Ensemble Summary")
+    lines.append("")
+
+    all_preds = np.array([result["predictions"] for result in results.values()])
+    anomaly_votes = np.sum(all_preds == -1, axis=0)
+
+    majority_count = int(np.sum(anomaly_votes > n_detectors / 2))
+    unanimous_count = int(np.sum(anomaly_votes == n_detectors))
+
+    lines.append(
+        f"- **Majority vote anomalies** (>{n_detectors // 2} detectors agree): "
+        f"{majority_count}"
+    )
+    lines.append(
+        f"- **Unanimous anomalies** (all {n_detectors} detectors agree): "
+        f"{unanimous_count}"
+    )
+    lines.append("")
+
+    report = "\n".join(lines)
+
+    if output_path is not None:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(report)
+
+    return report
