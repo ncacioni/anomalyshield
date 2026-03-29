@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import auc, roc_curve
 
 # ---------------------------------------------------------------------------
 # Design tokens — all visual values defined once here
@@ -175,14 +175,6 @@ def plot_anomaly_scores(
     """
     scores = np.asarray(scores)
     x = np.arange(len(scores))
-
-    if threshold is not None:
-        above = scores >= threshold
-        colors = np.where(above, _COLORS["anomaly"], _COLORS["normal"])
-        marker_symbols = np.where(above, "circle", "circle")
-    else:
-        colors = np.full(len(scores), _COLORS["normal"])
-        marker_symbols = np.full(len(scores), "circle")
 
     fig = go.Figure()
 

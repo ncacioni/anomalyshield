@@ -5,12 +5,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.datasets import make_blobs
 
-from src.detector import AnomalyShield, BaseDetector
+from src.detector import AnomalyShield
 from src.models.isolation_forest import IsolationForestDetector
 from src.utils import comparison_table, evaluate_detector, set_random_seeds
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -100,11 +98,15 @@ class TestIsolationForestDetectorFit:
 
 
 class TestIsolationForestDetectorPredict:
-    def test_output_shape(self, fitted_detector: IsolationForestDetector, mixed_data: np.ndarray) -> None:
+    def test_output_shape(
+        self, fitted_detector: IsolationForestDetector, mixed_data: np.ndarray,
+    ) -> None:
         preds = fitted_detector.predict(mixed_data)
         assert preds.shape == (len(mixed_data),)
 
-    def test_labels_are_minus1_or_1(self, fitted_detector: IsolationForestDetector, mixed_data: np.ndarray) -> None:
+    def test_labels_are_minus1_or_1(
+        self, fitted_detector: IsolationForestDetector, mixed_data: np.ndarray,
+    ) -> None:
         preds = fitted_detector.predict(mixed_data)
         assert set(np.unique(preds)).issubset({-1, 1})
 
@@ -135,7 +137,9 @@ class TestIsolationForestDetectorPredict:
 
 
 class TestIsolationForestDetectorScoreSamples:
-    def test_output_shape(self, fitted_detector: IsolationForestDetector, mixed_data: np.ndarray) -> None:
+    def test_output_shape(
+        self, fitted_detector: IsolationForestDetector, mixed_data: np.ndarray,
+    ) -> None:
         scores = fitted_detector.score_samples(mixed_data)
         assert scores.shape == (len(mixed_data),)
 
