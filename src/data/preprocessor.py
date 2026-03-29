@@ -1,4 +1,4 @@
-"""Time series preprocessing — missing value handling, normalization, windowing, feature engineering."""
+"""Time series preprocessing — missing values, normalization, windowing, features."""
 
 from __future__ import annotations
 

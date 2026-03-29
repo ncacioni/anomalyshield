@@ -8,16 +8,16 @@ import re
 import sys
 from datetime import date, timedelta
 
-logger = logging.getLogger("anomalyshield.dashboard")
-
-MAX_UPLOAD_SIZE_MB = 50
-_TICKER_PATTERN = re.compile(r"^[A-Z0-9.\-^=]{1,20}$")
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+
+logger = logging.getLogger("anomalyshield.dashboard")
+
+MAX_UPLOAD_SIZE_MB = 50
+_TICKER_PATTERN = re.compile(r"^[A-Z0-9.\-^=]{1,20}$")
 
 # ---------------------------------------------------------------------------
 # Path setup so src imports work regardless of cwd
@@ -139,7 +139,8 @@ def sidebar_config() -> dict:
             max_value=100,
             value=20,
             step=5,
-            help="Training epochs for the LSTM Autoencoder (only used when Autoencoder is selected).",
+            help="Training epochs for the LSTM Autoencoder "
+            "(only used when Autoencoder is selected).",
         )
 
         st.divider()
@@ -163,7 +164,7 @@ def sidebar_config() -> dict:
 # Data loading
 # ---------------------------------------------------------------------------
 
-def load_data(config: dict) -> Optional[pd.DataFrame]:
+def load_data(config: dict) -> pd.DataFrame | None:
     """Load and return a standardized DataFrame based on the sidebar config.
 
     Parameters
@@ -193,7 +194,7 @@ def load_data(config: dict) -> Optional[pd.DataFrame]:
                 config["yf_end"],
             )
 
-    except Exception as exc:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         logger.exception("Data load failed")
         st.error("Failed to load data. Please check your input and try again.")
 
@@ -292,17 +293,20 @@ def _write_temp_csv(uploaded_file, raw_df: pd.DataFrame) -> str:
 
 
 def _load_yahoo_finance(
-    ticker: Optional[str],
-    start: Optional[date],
-    end: Optional[date],
-) -> Optional[pd.DataFrame]:
+    ticker: str | None,
+    start: date | None,
+    end: date | None,
+) -> pd.DataFrame | None:
     """Fetch data from Yahoo Finance."""
     if not ticker:
         st.info("Enter a ticker symbol to fetch data.")
         return None
     ticker = ticker.strip().upper()
     if not _TICKER_PATTERN.match(ticker):
-        st.error("Invalid ticker symbol. Use 1-20 alphanumeric characters, dots, hyphens, or carets.")
+        st.error(
+            "Invalid ticker symbol. Use 1-20 alphanumeric characters, "
+            "dots, hyphens, or carets."
+        )
         return None
     if start is None or end is None:
         st.info("Select start and end dates.")
@@ -424,7 +428,7 @@ def _plot_raw_series(df: pd.DataFrame, value_col: str) -> go.Figure:
 def run_detection(
     df: pd.DataFrame,
     config: dict,
-) -> tuple[dict, Optional[np.ndarray]]:
+) -> tuple[dict, np.ndarray | None]:
     """Run the selected detectors and return results plus optional ground truth.
 
     Results are cached in ``st.session_state`` under the key
@@ -462,7 +466,7 @@ def run_detection(
     series = df[value_col].dropna()
 
     # Extract ground truth if available
-    y_true: Optional[np.ndarray] = None
+    y_true: np.ndarray | None = None
     if "is_anomaly" in df.columns:
         raw_labels = df["is_anomaly"].values
         # Convert 0/1 to -1/1  (1 = anomaly -> -1, 0 = normal -> 1)
@@ -659,7 +663,8 @@ def plot_comparison_bar(comparison_df: pd.DataFrame) -> go.Figure:
     comparison_df : pd.DataFrame
         DataFrame returned by ``AnomalyShield.compare()``.
     """
-    metrics = [c for c in comparison_df.columns if c in ("accuracy", "precision", "recall", "f1", "auc_roc")]
+    valid = ("accuracy", "precision", "recall", "f1", "auc_roc")
+    metrics = [c for c in comparison_df.columns if c in valid]
     if not metrics:
         metrics = comparison_df.columns.tolist()
 
@@ -707,7 +712,7 @@ def plot_roc_curves(
     y_true : np.ndarray
         Ground truth labels (-1/1 convention, -1 = anomaly).
     """
-    from sklearn.metrics import roc_curve, auc  # noqa: PLC0415
+    from sklearn.metrics import auc, roc_curve  # noqa: PLC0415
 
     fig = go.Figure()
     palette = px.colors.qualitative.Plotly

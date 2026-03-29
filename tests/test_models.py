@@ -1,4 +1,4 @@
-"""Tests for AnomalyShield models: LOF, EllipticEnvelope, Autoencoder, Prophet, and generate_report."""
+"""Tests for AnomalyShield models: LOF, Elliptic, Autoencoder, Prophet, report."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import tempfile
 import numpy as np
 import pandas as pd
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -406,7 +405,8 @@ class TestAutoencoderDetectorFit:
     def test_too_few_samples_raises(self) -> None:
         from src.models.autoencoder import AutoencoderDetector
 
-        det = AutoencoderDetector(window_size=20, **{k: v for k, v in _AE_PARAMS.items() if k != "window_size"})
+        params = {k: v for k, v in _AE_PARAMS.items() if k != "window_size"}
+        det = AutoencoderDetector(window_size=20, **params)
         tiny = np.zeros((5, 2))
         with pytest.raises(ValueError, match="window_size"):
             det.fit(tiny)
