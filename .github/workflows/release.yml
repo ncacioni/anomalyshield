@@ -32,7 +32,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Log release
         run: echo "Released ${{ needs.release-please.outputs.tag_name }}"
