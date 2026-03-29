@@ -85,6 +85,13 @@ class BaseDetector(ABC):
         """
         return self.fit(X).predict(X)
 
+    def _check_is_fitted(self) -> None:
+        """Raise if the model has not been fitted."""
+        if not self.is_fitted:
+            raise RuntimeError(
+                f"Detector '{self.name}' has not been fitted. Call fit() first."
+            )
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name!r})"
 

@@ -156,6 +156,9 @@ def generate_report(results: dict, output_path: str | None = None) -> str:
     lines.append("")
 
     # --- Summary ---
+    if not results:
+        raise ValueError("results dict is empty — nothing to report.")
+
     n_detectors = len(results)
     # Determine total data points from the first detector's predictions
     first_result = next(iter(results.values()))

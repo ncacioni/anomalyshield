@@ -1,5 +1,3 @@
-# Archon — entire framework (local tooling only)
-.archon/
 archon/
 
 # Claude Code — entire directory (local tooling only)
@@ -47,3 +45,12 @@ Thumbs.db
 *.joblib
 *.pt
 *.pth
+
+# Archon — local only (not shared)
+.archon/state.json
+.archon/memory/
+.archon/runtime/package-lock.json
+
+# Claude Code — local only (not shared)
+.claude/scratchpad/
+.claude/settings.local.json

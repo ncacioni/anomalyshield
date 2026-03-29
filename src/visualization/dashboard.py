@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-import io
+import logging
 import os
+import re
 import sys
 from datetime import date, timedelta
-from typing import Optional
+
+logger = logging.getLogger("anomalyshield.dashboard")
+
+MAX_UPLOAD_SIZE_MB = 50
+_TICKER_PATTERN = re.compile(r"^[A-Z0-9.\-^=]{1,20}$")
 
 import numpy as np
 import pandas as pd
@@ -138,7 +143,8 @@ def sidebar_config() -> dict:
         )
 
         st.divider()
-        st.caption("AnomalyShield v1.0")
+        from src import __version__  # noqa: PLC0415
+        st.caption(f"AnomalyShield v{__version__}")
 
     return {
         "data_source": data_source,
@@ -188,7 +194,8 @@ def load_data(config: dict) -> Optional[pd.DataFrame]:
             )
 
     except Exception as exc:  # noqa: BLE001
-        st.error(f"Failed to load data: {exc}")
+        logger.exception("Data load failed")
+        st.error("Failed to load data. Please check your input and try again.")
 
     return None
 
@@ -221,10 +228,14 @@ def _load_sample_data() -> pd.DataFrame:
     return datasets_mod.generate_synthetic()
 
 
-def _load_uploaded_csv(uploaded_file) -> Optional[pd.DataFrame]:
+def _load_uploaded_csv(uploaded_file) -> pd.DataFrame | None:
     """Parse an uploaded CSV file."""
     if uploaded_file is None:
         st.info("Upload a CSV file to get started.")
+        return None
+
+    if uploaded_file.size > MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+        st.error(f"File too large. Maximum size is {MAX_UPLOAD_SIZE_MB}MB.")
         return None
 
     raw = pd.read_csv(uploaded_file)
@@ -270,11 +281,13 @@ def _load_uploaded_csv(uploaded_file) -> Optional[pd.DataFrame]:
 
 def _write_temp_csv(uploaded_file, raw_df: pd.DataFrame) -> str:
     """Write a DataFrame to a temp file and return its path."""
+    import atexit  # noqa: PLC0415
     import tempfile  # noqa: PLC0415
 
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv", mode="w")
     raw_df.to_csv(tmp.name, index=False)
     tmp.close()
+    atexit.register(lambda p=tmp.name: os.unlink(p) if os.path.exists(p) else None)
     return tmp.name
 
 
@@ -286,6 +299,10 @@ def _load_yahoo_finance(
     """Fetch data from Yahoo Finance."""
     if not ticker:
         st.info("Enter a ticker symbol to fetch data.")
+        return None
+    ticker = ticker.strip().upper()
+    if not _TICKER_PATTERN.match(ticker):
+        st.error("Invalid ticker symbol. Use 1-20 alphanumeric characters, dots, hyphens, or carets.")
         return None
     if start is None or end is None:
         st.info("Select start and end dates.")

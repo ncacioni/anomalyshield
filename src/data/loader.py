@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import os
+
 import pandas as pd
+
+# Maximum CSV file size accepted by from_csv (50 MB).
+MAX_CSV_SIZE_BYTES = 50 * 1024 * 1024
 
 
 class TimeSeriesLoader:
@@ -45,8 +50,20 @@ class TimeSeriesLoader:
         ValueError
             If required columns are missing or values cannot be parsed.
         """
+        # Validate file exists and is a CSV
+        resolved = os.path.realpath(path)
+        if not resolved.lower().endswith(".csv"):
+            raise ValueError("Only .csv files are accepted.")
+        if not os.path.isfile(resolved):
+            raise FileNotFoundError(f"CSV file not found: {path}")
+        if os.path.getsize(resolved) > MAX_CSV_SIZE_BYTES:
+            raise ValueError(
+                f"CSV file exceeds maximum size of "
+                f"{MAX_CSV_SIZE_BYTES // (1024 * 1024)}MB."
+            )
+
         try:
-            df = pd.read_csv(path, parse_dates=[date_col])
+            df = pd.read_csv(resolved, parse_dates=[date_col])
         except FileNotFoundError:
             raise FileNotFoundError(f"CSV file not found: {path}")
         except ValueError as exc:

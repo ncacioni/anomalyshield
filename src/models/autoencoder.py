@@ -173,12 +173,6 @@ class AutoencoderDetector(BaseDetector):
         errors = ((tensor - recon) ** 2).mean(dim=(1, 2)).cpu().numpy()
         return errors
 
-    def _check_is_fitted(self) -> None:
-        if not self.is_fitted:
-            raise RuntimeError(
-                f"Detector '{self.name}' has not been fitted. Call fit() first."
-            )
-
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
