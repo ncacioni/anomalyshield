@@ -202,8 +202,8 @@ with TAB_COMPARE:
                     fig_roc = plot_roc_curves(results, y_true)
                     st.plotly_chart(fig_roc, use_container_width=True)
 
-            except ValueError as exc:
-                st.error(f"Could not compute metrics: {exc}")
+            except ValueError:
+                st.error("Could not compute metrics. Ensure ground truth labels are present.")
 
 # ===========================================================================
 # TAB 4 — Forecasting (Prophet)
@@ -264,16 +264,15 @@ with TAB_FORECAST:
 
                         with st.spinner("Fitting Prophet model (this may take a moment)..."):
                             forecaster = ProphetForecaster()
-                            forecaster.fit(prophet_input)
+                            anomaly_df = forecaster.detect_anomalies(prophet_input)
                             forecast_df = forecaster.predict(periods=forecast_periods)
-                            anomaly_df = ProphetForecaster().detect_anomalies(prophet_input)
 
                         st.session_state["prophet_forecast"] = forecast_df
                         st.session_state["prophet_anomalies"] = anomaly_df
                         st.session_state["prophet_cache_key"] = prophet_cache_key
 
-                    except Exception as exc:  # noqa: BLE001
-                        st.error(f"Prophet failed: {exc}")
+                    except Exception:  # noqa: BLE001
+                        st.error("Prophet model failed. Check your data format and try again.")
 
                 if "prophet_forecast" in st.session_state:
                     forecast_df = st.session_state["prophet_forecast"]
@@ -336,8 +335,8 @@ with TAB_REPORT:
                         st.session_state["report_markdown"] = report_md
                         st.session_state["report_path"] = tmp_path
 
-                except Exception as exc:  # noqa: BLE001
-                    st.error(f"Failed to generate report: {exc}")
+                except Exception:  # noqa: BLE001
+                    st.error("Failed to generate report. Please try again.")
 
             if "report_markdown" in st.session_state:
                 report_md = st.session_state["report_markdown"]

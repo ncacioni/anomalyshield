@@ -113,9 +113,3 @@ class LOFDetector(BaseDetector):
         self._check_is_fitted()
         return -self._model.score_samples(X)
 
-    def _check_is_fitted(self) -> None:
-        """Raise if the model has not been fitted."""
-        if not self.is_fitted:
-            raise RuntimeError(
-                f"Detector '{self.name}' has not been fitted. Call fit() first."
-            )
