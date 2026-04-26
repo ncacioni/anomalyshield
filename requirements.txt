@@ -24,7 +24,7 @@ sqlalchemy>=2.0.0,<3.0.0
 psycopg2-binary>=2.9.0,<3.0.0
 
 # Data sources
-yfinance>=0.2.31,<2.0.0
+yfinance>=1.3.0,<2.0.0
 requests>=2.31.0,<3.0.0
 
 # Notebooks
