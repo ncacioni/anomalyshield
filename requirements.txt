@@ -17,7 +17,7 @@ plotly>=5.18.0,<7.0.0
 matplotlib>=3.8.0,<4.0.0
 
 # Dashboard
-streamlit>=1.28.0,<2.0.0
+streamlit>=1.56.0,<2.0.0
 
 # Database
 sqlalchemy>=2.0.0,<3.0.0
