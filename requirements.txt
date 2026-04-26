@@ -21,7 +21,7 @@ streamlit>=1.28.0,<2.0.0
 
 # Database
 sqlalchemy>=2.0.0,<3.0.0
-psycopg2-binary>=2.9.0,<3.0.0
+psycopg2-binary>=2.9.12,<3.0.0
 
 # Data sources
 yfinance>=0.2.31,<2.0.0
